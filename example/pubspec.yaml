@@ -1,0 +1,27 @@
+name: automl_image_labeling_example
+description: Demonstrates how to use the automl_image_labeling plugin.
+
+publish_to: 'none'
+
+environment:
+  sdk: ">=2.7.0 <3.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  automl_image_labeling:
+    path: ../
+  camera2:
+    git:
+      url: https://github.com/s0nerik/camera2.git
+      ref: 9c8c69e9bd47be3217a8c88b8410345590cbd4b6
+  permission_handler: ^5.0.1+1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/test_model/
