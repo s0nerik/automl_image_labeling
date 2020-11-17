@@ -14,7 +14,7 @@ dependencies:
   camera2:
     git:
       url: https://github.com/s0nerik/camera2.git
-      ref: 9c8c69e9bd47be3217a8c88b8410345590cbd4b6
+      ref: 84a8270b314be71774128dd05079d392913e7a23
   permission_handler: ^5.0.1+1
 
 dev_dependencies:

@@ -26,8 +26,8 @@ packages:
     dependency: "direct main"
     description:
       path: "."
-      ref: "9c8c69e9bd47be3217a8c88b8410345590cbd4b6"
-      resolved-ref: "9c8c69e9bd47be3217a8c88b8410345590cbd4b6"
+      ref: "84a8270b314be71774128dd05079d392913e7a23"
+      resolved-ref: "84a8270b314be71774128dd05079d392913e7a23"
       url: "https://github.com/s0nerik/camera2.git"
     source: git
     version: "0.0.1"
