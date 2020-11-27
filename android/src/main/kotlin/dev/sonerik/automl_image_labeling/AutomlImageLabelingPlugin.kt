@@ -39,7 +39,10 @@ class AutomlImageLabelingPlugin : FlutterPlugin, MethodCallHandler, ActivityAwar
     private val labelerBitmapBuffers = mutableMapOf<Int, IntArray>()
     private val executors = mutableMapOf<Int, Executor>()
 
+    private lateinit var binding: FlutterPlugin.FlutterPluginBinding
+
     override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
+        binding = flutterPluginBinding
         channel = MethodChannel(flutterPluginBinding.binaryMessenger, "dev.sonerik.automl_image_labeling")
         channel.setMethodCallHandler(this)
     }
@@ -47,7 +50,13 @@ class AutomlImageLabelingPlugin : FlutterPlugin, MethodCallHandler, ActivityAwar
     override fun onMethodCall(@NonNull call: MethodCall, @NonNull result: Result) {
         when (call.method) {
             "prepareLabeler" -> {
-                val manifestFileAssetPath = call.argument<String>("manifestFileAssetPath")!!
+                val manifestFileAssetPathParam = call.argument<String>("manifestFileAssetPath")!!
+                val manifestFileAssetPackageParam = call.argument<String?>("manifestFileAssetPackage")
+                val manifestFileAssetPath = if (manifestFileAssetPackageParam != null)
+                    binding.flutterAssets.getAssetFilePathBySubpath(manifestFileAssetPathParam, manifestFileAssetPackageParam)
+                else
+                    binding.flutterAssets.getAssetFilePathBySubpath(manifestFileAssetPathParam)
+
                 val confidenceThreshold = call.argument<Double>("confidenceThreshold")!!
                 val bitmapWidth = call.argument<Int>("bitmapWidth")!!
                 val bitmapHeight = call.argument<Int>("bitmapHeight")!!

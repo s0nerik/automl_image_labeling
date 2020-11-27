@@ -40,7 +40,7 @@ class __BodyState extends State<_Body> {
   static const _centerCropWidthPercent = 0.8;
 
   final _labeler = AutoMlImageLabeler(
-    manifestFileAssetPath: 'flutter_assets/assets/test_model/manifest.json',
+    manifestFileAssetPath: 'assets/test_model/manifest.json',
     confidenceThreshold: 0,
   );
 
