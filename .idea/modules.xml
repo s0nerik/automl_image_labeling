@@ -3,8 +3,6 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/automl_image_labeling.iml" filepath="$PROJECT_DIR$/automl_image_labeling.iml" />
-      <module fileurl="file://$PROJECT_DIR$/android/automl_image_labeling_android.iml" filepath="$PROJECT_DIR$/android/automl_image_labeling_android.iml" />
-      <module fileurl="file://$PROJECT_DIR$/example/android/automl_image_labeling_example_android.iml" filepath="$PROJECT_DIR$/example/android/automl_image_labeling_example_android.iml" />
     </modules>
   </component>
 </project>
