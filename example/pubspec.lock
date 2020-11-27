@@ -25,11 +25,9 @@ packages:
   camera2:
     dependency: "direct main"
     description:
-      path: "."
-      ref: "84a8270b314be71774128dd05079d392913e7a23"
-      resolved-ref: "84a8270b314be71774128dd05079d392913e7a23"
-      url: "https://github.com/s0nerik/camera2.git"
-    source: git
+      path: "../../camera2"
+      relative: true
+    source: path
     version: "0.0.1"
   characters:
     dependency: transitive
