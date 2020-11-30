@@ -9,7 +9,8 @@ public class SwiftAutomlImageLabelingPlugin: NSObject, FlutterPlugin {
     private var lastLabelerId = 0
     private var labelers = Dictionary<Int, ImageLabeler>()
     private var labelerBitmapSizes = Dictionary<Int, CGSize>()
-    private var labelerBitmaps = Dictionary<Int, Array<UInt8>>()
+//    private var labelerBitmaps = Dictionary<Int, UnsafeMutableBufferPointer<UInt8>>()
+    private var labelerBitmaps = Dictionary<Int, Array<PixelData>>()
     private var labelerQueues = Dictionary<Int, DispatchQueue>()
     
     init(registrar: FlutterPluginRegistrar) {
@@ -50,7 +51,7 @@ public class SwiftAutomlImageLabelingPlugin: NSObject, FlutterPlugin {
                 confidenceThreshold: confidenceThreshold,
                 bitmapSize: CGSize(width: bitmapWidth, height: bitmapHeight)
             );
-
+            
             result(id)
         case "disposeLabeler":
             let args = call.arguments as! Dictionary<String, Any?>
@@ -63,15 +64,16 @@ public class SwiftAutomlImageLabelingPlugin: NSObject, FlutterPlugin {
             let imageRgbBytes = args["rgbBytes"] as! FlutterStandardTypedData
             let size = labelerBitmapSizes[id]!
             let labeler = labelers[id]!
+            var pixels = labelerBitmaps[id]!
             labelerQueues[id]!.async {
-//                let cgImage = writeRgbByteArrayToBitmap(bytes: imageRgbBytes.data, width: Int(size.width), height: Int(size.height))
-//                let uiImage = UIImage(cgImage: cgImage)
-                let bytes = [UInt8](imageRgbBytes.data)
-                var pixels = Array<PixelData>(repeating: PixelData(a: 0, r: 0, g: 0, b: 0), count: Int(size.width * size.height))
-                writeRgbByteArrayToBitmap(bytes: bytes, pixels: &pixels)
+                //                let cgImage = writeRgbByteArrayToBitmap(bytes: imageRgbBytes.data, width: Int(size.width), height: Int(size.height))
+                //                let uiImage = UIImage(cgImage: cgImage)
+                var bytes = [UInt8](imageRgbBytes.data)
+                writeRgbByteArrayToBitmap(bytes: &bytes, pixels: &pixels)
                 
-                let uiImage = imageFromARGB32Bitmap(pixels: pixels, width: Int(size.width), height: Int(size.height))!
+                let uiImage = imageFromARGB32Bitmap(pixels: &pixels, width: Int(size.width), height: Int(size.height))!
                 let image = VisionImage(image: uiImage)
+//                image.provideImageData(<#T##data: UnsafeMutableRawPointer##UnsafeMutableRawPointer#>, bytesPerRow: <#T##Int#>, origin: <#T##Int#>, <#T##y: Int##Int#>, size: <#T##Int#>, <#T##height: Int##Int#>, userInfo: <#T##Any?#>)
                 labeler.process(image) { labels, error in
                     guard error == nil, let labels = labels, !labels.isEmpty else {
                         DispatchQueue.main.async {
@@ -105,7 +107,7 @@ public class SwiftAutomlImageLabelingPlugin: NSObject, FlutterPlugin {
     ) -> Int {
         let id = lastLabelerId
         lastLabelerId += 1
-
+        
         let queue = DispatchQueue(label: "AutoML Labeler #\(id)")
         let localModel = AutoMLImageLabelerLocalModel(manifestPath: manifestFileAssetPath)
         let options = AutoMLImageLabelerOptions(localModel: localModel)
@@ -115,6 +117,11 @@ public class SwiftAutomlImageLabelingPlugin: NSObject, FlutterPlugin {
         labelers[id] = imageLabeler
         labelerQueues[id] = queue
         labelerBitmapSizes[id] = bitmapSize
+//        labelerBitmaps[id] = UnsafeMutableBufferPointer<UInt8>.allocate(capacity: Int(bitmapSize.width * bitmapSize.height * 4))
+        labelerBitmaps[id] = Array<PixelData>(
+            repeating: PixelData(a: 0, r: 0, g: 0, b: 0),
+            count: Int(bitmapSize.width * bitmapSize.height)
+        )
         
         return id
     }
@@ -190,21 +197,23 @@ private struct PixelData {
     var b: UInt8
 }
 
-private func imageFromARGB32Bitmap(pixels: [PixelData], width: Int, height: Int) -> UIImage? {
+private func imageFromARGB32Bitmap(pixels: inout [PixelData], width: Int, height: Int) -> UIImage? {
     guard width > 0 && height > 0 else { return nil }
     guard pixels.count == width * height else { return nil }
-
+    
     let rgbColorSpace = CGColorSpaceCreateDeviceRGB()
     let bitmapInfo = CGBitmapInfo(rawValue: CGImageAlphaInfo.premultipliedFirst.rawValue)
     let bitsPerComponent = 8
     let bitsPerPixel = 32
-
+    
     var data = pixels // Copy to mutable []
-    guard let providerRef = CGDataProvider(data: NSData(bytes: &data,
-                            length: data.count * MemoryLayout<PixelData>.size)
+    guard let providerRef = CGDataProvider(
+        data: NSData(bytes: &data,
+                     length: data.count * MemoryLayout<PixelData>.size
         )
-        else { return nil }
-
+    )
+    else { return nil }
+    
     guard let cgim = CGImage(
         width: width,
         height: height,
@@ -217,13 +226,13 @@ private func imageFromARGB32Bitmap(pixels: [PixelData], width: Int, height: Int)
         decode: nil,
         shouldInterpolate: true,
         intent: .defaultIntent
-        )
-        else { return nil }
-
+    )
+    else { return nil }
+    
     return UIImage(cgImage: cgim)
 }
 
-private func writeRgbByteArrayToBitmap(bytes: [UInt8], pixels: inout [PixelData]) {
+private func writeRgbByteArrayToBitmap(bytes: inout [UInt8], pixels: inout [PixelData]) {
     let nrOfPixels: Int = bytes.count / 3 // Three bytes per pixel
     if (nrOfPixels < pixels.count) {
         return
@@ -232,7 +241,7 @@ private func writeRgbByteArrayToBitmap(bytes: [UInt8], pixels: inout [PixelData]
         let r = 0xFF & bytes[3 * i]
         let g = 0xFF & bytes[3 * i + 1]
         let b = 0xFF & bytes[3 * i + 2]
-
+        
         pixels[i] = PixelData(a: 255, r: r, g: g, b: b)
     }
 }
