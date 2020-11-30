@@ -12,11 +12,11 @@ dependencies:
   automl_image_labeling:
     path: ../
   camera2:
-    path: ../../camera2
-#    git:
-#      url: https://github.com/s0nerik/camera2.git
-#      ref: 84a8270b314be71774128dd05079d392913e7a23
+    git:
+      url: https://github.com/s0nerik/camera2.git
+      ref: 72d031bf4a21e8c1b5c9a8059e60fc937fa68dd9
   permission_handler: ^5.0.1+1
+  image: ^2.1.19
 
 dev_dependencies:
   flutter_test:
