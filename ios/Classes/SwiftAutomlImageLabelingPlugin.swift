@@ -9,8 +9,7 @@ public class SwiftAutomlImageLabelingPlugin: NSObject, FlutterPlugin {
     private var lastLabelerId = 0
     private var labelers = Dictionary<Int, ImageLabeler>()
     private var labelerBitmapSizes = Dictionary<Int, CGSize>()
-//    private var labelerBitmaps = Dictionary<Int, UnsafeMutableBufferPointer<UInt8>>()
-    private var labelerBitmaps = Dictionary<Int, Array<PixelData>>()
+    private var labelerBitmaps = Dictionary<Int, UnsafeMutableBufferPointer<UInt8>>()
     private var labelerQueues = Dictionary<Int, DispatchQueue>()
     
     init(registrar: FlutterPluginRegistrar) {
@@ -66,14 +65,13 @@ public class SwiftAutomlImageLabelingPlugin: NSObject, FlutterPlugin {
             let labeler = labelers[id]!
             var pixels = labelerBitmaps[id]!
             labelerQueues[id]!.async {
-                //                let cgImage = writeRgbByteArrayToBitmap(bytes: imageRgbBytes.data, width: Int(size.width), height: Int(size.height))
-                //                let uiImage = UIImage(cgImage: cgImage)
-                var bytes = [UInt8](imageRgbBytes.data)
-                writeRgbByteArrayToBitmap(bytes: &bytes, pixels: &pixels)
+                imageRgbBytes.data.withUnsafeBytes {
+                    var bytes = $0
+                    writeRgbByteArrayToBitmap(rgbBytes: &bytes, argbBitmap: &pixels)
+                }
                 
                 let uiImage = imageFromARGB32Bitmap(pixels: &pixels, width: Int(size.width), height: Int(size.height))!
                 let image = VisionImage(image: uiImage)
-//                image.provideImageData(<#T##data: UnsafeMutableRawPointer##UnsafeMutableRawPointer#>, bytesPerRow: <#T##Int#>, origin: <#T##Int#>, <#T##y: Int##Int#>, size: <#T##Int#>, <#T##height: Int##Int#>, userInfo: <#T##Any?#>)
                 labeler.process(image) { labels, error in
                     guard error == nil, let labels = labels, !labels.isEmpty else {
                         DispatchQueue.main.async {
@@ -117,11 +115,7 @@ public class SwiftAutomlImageLabelingPlugin: NSObject, FlutterPlugin {
         labelers[id] = imageLabeler
         labelerQueues[id] = queue
         labelerBitmapSizes[id] = bitmapSize
-//        labelerBitmaps[id] = UnsafeMutableBufferPointer<UInt8>.allocate(capacity: Int(bitmapSize.width * bitmapSize.height * 4))
-        labelerBitmaps[id] = Array<PixelData>(
-            repeating: PixelData(a: 0, r: 0, g: 0, b: 0),
-            count: Int(bitmapSize.width * bitmapSize.height)
-        )
+        labelerBitmaps[id] = UnsafeMutableBufferPointer<UInt8>.allocate(capacity: Int(bitmapSize.width * bitmapSize.height * 4))
         
         return id
     }
@@ -129,88 +123,23 @@ public class SwiftAutomlImageLabelingPlugin: NSObject, FlutterPlugin {
     private func disposeLabeler(id: Int) {
         labelers.removeValue(forKey: id)
         labelerBitmapSizes.removeValue(forKey: id)
+        labelerBitmaps[id]?.deallocate()
         labelerBitmaps.removeValue(forKey: id)
         labelerQueues.removeValue(forKey: id)
     }
 }
 
-//private func writeRgbByteArrayToBitmap(bytes: Data, width: Int, height: Int) -> CGImage {
-//    var data = bytes
-//    return data.withUnsafeMutableBytes { (arg: UnsafeMutableRawBufferPointer) -> CGImage in
-////            let dataArray = [UInt8](bytes)
-////            let imageDataPointer = UnsafeMutablePointer<UInt8>(mutating: dataArray)
-//
-//        let imageDataPointer = arg.baseAddress!
-//
-//        let colorSpaceRef = CGColorSpaceCreateDeviceGray()
-//
-//        let bitsPerComponent = 8
-//        let bytesPerPixel = 1
-//        let bitsPerPixel = bytesPerPixel * bitsPerComponent
-//        let bytesPerRow = bytesPerPixel * width
-//        let totalBytes = height * bytesPerRow
-//
-//        let bitmapInfo = CGBitmapInfo(rawValue: CGImageAlphaInfo.none.rawValue)
-////            .union(.ByteOrderDefault)
-//
-//        let releaseMaskImagePixelData: CGDataProviderReleaseDataCallback = { (info: UnsafeMutableRawPointer?, data: UnsafeRawPointer, size: Int) -> () in
-//            // https://developer.apple.com/reference/coregraphics/cgdataproviderreleasedatacallback
-//            // N.B. 'CGDataProviderRelease' is unavailable: Core Foundation objects are automatically memory managed
-//            return
-//        }
-//        let providerRef = CGDataProvider(dataInfo: nil, data: imageDataPointer, size: totalBytes, releaseData: releaseMaskImagePixelData)
-//        return CGImage(
-//            width: width,
-//            height: height,
-//            bitsPerComponent: bitsPerComponent,
-//            bitsPerPixel: bitsPerPixel,
-//            bytesPerRow: bytesPerRow,
-//            space: colorSpaceRef,
-//            bitmapInfo: bitmapInfo,
-//            provider: providerRef!,
-//            decode: nil,
-//            shouldInterpolate: false,
-//            intent: CGColorRenderingIntent.defaultIntent
-//        )!
-//    }
-//}
-//
-//private func writeRgbByteArrayToBitmap(bytes: Data) {
-////        let array = [UInt8](bytes)
-//
-//
-////        val nrOfPixels: Int = bytes.size / 3 // Three bytes per pixel
-////        for (i in 0 until nrOfPixels) {
-////            val r = 0xFF and bytes[3 * i].toInt()
-////            val g = 0xFF and bytes[3 * i + 1].toInt()
-////            val b = 0xFF and bytes[3 * i + 2].toInt()
-////
-////            pixels[i] = Color.rgb(r, g, b)
-////        }
-////        bitmap.setPixels(pixels, 0, bitmap.width, 0, 0, bitmap.width, bitmap.height)
-//}
-
-private struct PixelData {
-    var a: UInt8
-    var r: UInt8
-    var g: UInt8
-    var b: UInt8
-}
-
-private func imageFromARGB32Bitmap(pixels: inout [PixelData], width: Int, height: Int) -> UIImage? {
+private func imageFromARGB32Bitmap(pixels: inout UnsafeMutableBufferPointer<UInt8>, width: Int, height: Int) -> UIImage? {
     guard width > 0 && height > 0 else { return nil }
-    guard pixels.count == width * height else { return nil }
+    guard pixels.count == width * height * 4 else { return nil }
     
     let rgbColorSpace = CGColorSpaceCreateDeviceRGB()
     let bitmapInfo = CGBitmapInfo(rawValue: CGImageAlphaInfo.premultipliedFirst.rawValue)
     let bitsPerComponent = 8
     let bitsPerPixel = 32
     
-    var data = pixels // Copy to mutable []
     guard let providerRef = CGDataProvider(
-        data: NSData(bytes: &data,
-                     length: data.count * MemoryLayout<PixelData>.size
-        )
+        data: NSData(bytesNoCopy: pixels.baseAddress!, length: pixels.count, deallocator: { (UnsafeMutableRawPointer, Int) in })
     )
     else { return nil }
     
@@ -219,7 +148,7 @@ private func imageFromARGB32Bitmap(pixels: inout [PixelData], width: Int, height
         height: height,
         bitsPerComponent: bitsPerComponent,
         bitsPerPixel: bitsPerPixel,
-        bytesPerRow: width * MemoryLayout<PixelData>.size,
+        bytesPerRow: width * 4,
         space: rgbColorSpace,
         bitmapInfo: bitmapInfo,
         provider: providerRef,
@@ -232,16 +161,22 @@ private func imageFromARGB32Bitmap(pixels: inout [PixelData], width: Int, height
     return UIImage(cgImage: cgim)
 }
 
-private func writeRgbByteArrayToBitmap(bytes: inout [UInt8], pixels: inout [PixelData]) {
-    let nrOfPixels: Int = bytes.count / 3 // Three bytes per pixel
-    if (nrOfPixels < pixels.count) {
+private func writeRgbByteArrayToBitmap(rgbBytes: inout UnsafeRawBufferPointer, argbBitmap: inout UnsafeMutableBufferPointer<UInt8>) {
+    let nrOfPixels: Int = rgbBytes.count / 3 // Three bytes per pixel
+    if (nrOfPixels > argbBitmap.count) {
         return
     }
-    for i in (0...nrOfPixels-1) {
-        let r = 0xFF & bytes[3 * i]
-        let g = 0xFF & bytes[3 * i + 1]
-        let b = 0xFF & bytes[3 * i + 2]
+    var colorIndex = 0
+    for i in (0..<nrOfPixels) {
+        let r = 0xFF & rgbBytes[3 * i]
+        let g = 0xFF & rgbBytes[3 * i + 1]
+        let b = 0xFF & rgbBytes[3 * i + 2]
         
-        pixels[i] = PixelData(a: 255, r: r, g: g, b: b)
+        argbBitmap[colorIndex] = 255
+        argbBitmap[colorIndex + 1] = r
+        argbBitmap[colorIndex + 2] = g
+        argbBitmap[colorIndex + 3] = b
+        
+        colorIndex += 4
     }
 }
