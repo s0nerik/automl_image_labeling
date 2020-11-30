@@ -1,6 +1,10 @@
+import 'dart:async';
+import 'dart:typed_data';
+
 import 'package:automl_image_labeling/automl_image_labeling.dart';
 import 'package:camera2/camera2.dart';
 import 'package:flutter/material.dart';
+import 'package:image/image.dart' as image;
 import 'package:permission_handler/permission_handler.dart';
 
 class AnalysisScreen extends StatelessWidget {
@@ -36,6 +40,9 @@ class __BodyState extends State<_Body> {
   var _requestImageDurationMs = 0.0;
   var _processImageDurationMs = 0.0;
 
+  final _previewImage = image.Image(224, 224);
+  final _convertedAnalysisImageBytes = StreamController<Uint8List>();
+
   static const _centerCropAspectRatio = 16.0 / 10.0;
   static const _centerCropWidthPercent = 0.8;
 
@@ -54,7 +61,34 @@ class __BodyState extends State<_Body> {
   @override
   void dispose() {
     _labeler.dispose();
+    _convertedAnalysisImageBytes.close();
     super.dispose();
+  }
+
+  void _writePreviewAnalysisImage(Uint8List imageBytes) {
+    final pixelsAmount = imageBytes.lengthInBytes ~/ 3;
+
+    var i = 0;
+    var j = 0;
+    while (j < pixelsAmount) {
+      _previewImage.setPixel(
+        j % _previewImage.width,
+        j ~/ _previewImage.height,
+        Color.fromARGB(
+          255,
+          imageBytes[i],
+          imageBytes[i + 1],
+          imageBytes[i + 2],
+        ).value,
+      );
+      i += 3;
+      j++;
+    }
+    if (!_convertedAnalysisImageBytes.isClosed) {
+      _convertedAnalysisImageBytes.add(
+        Uint8List.fromList(image.encodePng(_previewImage)),
+      );
+    }
   }
 
   Future<void> _runLabeling() async {
@@ -90,6 +124,9 @@ class __BodyState extends State<_Body> {
           reqImageStopwatch.elapsedMilliseconds / totalRequests;
 
       if (imageBytes != null) {
+        // stopwatch.stop();
+        // _writePreviewAnalysisImage(imageBytes);
+        // stopwatch.start();
         try {
           processImageStopwatch.start();
           final results = await _labeler.process(imageBytes);
@@ -132,19 +169,35 @@ class __BodyState extends State<_Body> {
           Container(
             height: 200,
             alignment: Alignment.topCenter,
-            child: Column(
+            child: Stack(
+              fit: StackFit.expand,
               children: [
-                Text(
-                  'FPS: ${_fps.toStringAsFixed(1)}, '
-                  'REQUEST: ${_requestImageDurationMs.toStringAsFixed(1)}, '
-                  'PROCESS: ${_processImageDurationMs.toStringAsFixed(1)}',
-                  textAlign: TextAlign.center,
+                // StreamBuilder<Uint8List>(
+                //   stream: _convertedAnalysisImageBytes.stream,
+                //   builder: (context, snapshot) => snapshot.hasData
+                //       ? Image.memory(
+                //           snapshot.data,
+                //           gaplessPlayback: true,
+                //           isAntiAlias: true,
+                //           fit: BoxFit.contain,
+                //         )
+                //       : Container(),
+                // ),
+                Column(
+                  children: [
+                    Text(
+                      'FPS: ${_fps.toStringAsFixed(1)}, '
+                      'REQUEST: ${_requestImageDurationMs.toStringAsFixed(1)}, '
+                      'PROCESS: ${_processImageDurationMs.toStringAsFixed(1)}',
+                      textAlign: TextAlign.center,
+                    ),
+                    Text(
+                      _analysisResult,
+                      textAlign: TextAlign.center,
+                    ),
+                    Text(_allResults),
+                  ],
                 ),
-                Text(
-                  _analysisResult,
-                  textAlign: TextAlign.center,
-                ),
-                Text(_allResults),
               ],
             ),
           ),
