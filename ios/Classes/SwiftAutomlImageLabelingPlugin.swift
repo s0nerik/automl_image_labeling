@@ -1,6 +1,7 @@
 import Flutter
 import UIKit
-import MLKitImageLabelingAutoML
+import MLKitCommon
+import MLKitImageLabelingCustom
 import MLKitVision
 
 public class SwiftAutomlImageLabelingPlugin: NSObject, FlutterPlugin {
@@ -107,8 +108,8 @@ public class SwiftAutomlImageLabelingPlugin: NSObject, FlutterPlugin {
         lastLabelerId += 1
         
         let queue = DispatchQueue(label: "AutoML Labeler #\(id)", qos: .userInteractive)
-        let localModel = AutoMLImageLabelerLocalModel(manifestPath: manifestFileAssetPath)
-        let options = AutoMLImageLabelerOptions(localModel: localModel)
+        let localModel = LocalModel(manifestPath: manifestFileAssetPath)!
+        let options = CustomImageLabelerOptions(localModel: localModel)
         options.confidenceThreshold = NSNumber(value: confidenceThreshold)
         let imageLabeler = ImageLabeler.imageLabeler(options: options)
         
