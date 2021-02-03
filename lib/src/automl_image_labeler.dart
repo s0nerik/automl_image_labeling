@@ -25,16 +25,16 @@ class AutoMlImageLabel {
 
 class AutoMlImageLabeler {
   AutoMlImageLabeler({
-    @required this.manifestFileAssetPath,
-    this.manifestFileAssetPackage,
+    @required this.modelFileAssetPath,
+    this.modelFileAssetPackage,
     this.confidenceThreshold = 0.5,
     this.bitmapSize = const Size(224, 224),
-  })  : assert(manifestFileAssetPath != null),
+  })  : assert(modelFileAssetPath != null),
         assert(confidenceThreshold != null),
         assert(bitmapSize != null);
 
-  final String manifestFileAssetPath;
-  final String manifestFileAssetPackage;
+  final String modelFileAssetPath;
+  final String modelFileAssetPackage;
   final double confidenceThreshold;
   final Size bitmapSize;
 
@@ -43,9 +43,9 @@ class AutoMlImageLabeler {
   Future<void> init() async {
     try {
       final id = await _channel.invokeMethod('prepareLabeler', {
-        'manifestFileAssetPath': manifestFileAssetPath,
-        if (manifestFileAssetPackage != null)
-          'manifestFileAssetPackage': manifestFileAssetPackage,
+        'modelFileAssetPath': modelFileAssetPath,
+        if (modelFileAssetPackage != null)
+          'modelFileAssetPackage': modelFileAssetPackage,
         'confidenceThreshold': confidenceThreshold,
         'bitmapWidth': bitmapSize.width.toInt(),
         'bitmapHeight': bitmapSize.height.toInt(),

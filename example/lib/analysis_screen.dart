@@ -47,7 +47,7 @@ class __BodyState extends State<_Body> {
   static const _centerCropWidthPercent = 0.8;
 
   final _labeler = AutoMlImageLabeler(
-    manifestFileAssetPath: 'assets/test_model/manifest.json',
+    modelFileAssetPath: 'assets/test_model/model.tflite',
     confidenceThreshold: 0,
   );
 

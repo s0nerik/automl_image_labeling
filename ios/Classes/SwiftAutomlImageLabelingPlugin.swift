@@ -28,18 +28,18 @@ public class SwiftAutomlImageLabelingPlugin: NSObject, FlutterPlugin {
         switch call.method {
         case "prepareLabeler":
             let args = call.arguments as! Dictionary<String, Any?>
-            let manifestFileAssetPathParam = args["manifestFileAssetPath"] as! String
-            let manifestFileAssetPackageParam = args["manifestFileAssetPackage"] as? String
-            let manifestFileAssetPath: String
-            if let manifestFileAssetPackageParam = manifestFileAssetPackageParam {
+            let modelFileAssetPathParam = args["modelFileAssetPath"] as! String
+            let modelFileAssetPackageParam = args["modelFileAssetPackage"] as? String
+            let modelFileAssetPath: String
+            if let manifestFileAssetPackageParam = modelFileAssetPackageParam {
                 let key = registrar.lookupKey(
-                    forAsset: manifestFileAssetPathParam,
+                    forAsset: modelFileAssetPathParam,
                     fromPackage: manifestFileAssetPackageParam
                 )
-                manifestFileAssetPath = Bundle.main.path(forResource: key, ofType: nil)!
+                modelFileAssetPath = Bundle.main.path(forResource: key, ofType: nil)!
             } else {
-                let key = registrar.lookupKey(forAsset: manifestFileAssetPathParam)
-                manifestFileAssetPath = Bundle.main.path(forResource: key, ofType: nil)!
+                let key = registrar.lookupKey(forAsset: modelFileAssetPathParam)
+                modelFileAssetPath = Bundle.main.path(forResource: key, ofType: nil)!
             }
             
             let confidenceThreshold = Float(args["confidenceThreshold"] as! Double)
@@ -47,7 +47,7 @@ public class SwiftAutomlImageLabelingPlugin: NSObject, FlutterPlugin {
             let bitmapHeight = args["bitmapHeight"] as! Int
             
             let id = initLabeler(
-                manifestFileAssetPath: manifestFileAssetPath,
+                modelFileAssetPath: modelFileAssetPath,
                 confidenceThreshold: confidenceThreshold,
                 bitmapSize: CGSize(width: bitmapWidth, height: bitmapHeight)
             );
@@ -100,7 +100,7 @@ public class SwiftAutomlImageLabelingPlugin: NSObject, FlutterPlugin {
     }
     
     private func initLabeler(
-        manifestFileAssetPath: String,
+        modelFileAssetPath: String,
         confidenceThreshold: Float,
         bitmapSize: CGSize
     ) -> Int {
@@ -108,7 +108,7 @@ public class SwiftAutomlImageLabelingPlugin: NSObject, FlutterPlugin {
         lastLabelerId += 1
         
         let queue = DispatchQueue(label: "AutoML Labeler #\(id)", qos: .userInteractive)
-        let localModel = LocalModel(manifestPath: manifestFileAssetPath)
+        let localModel = LocalModel(path: modelFileAssetPath)
         let options = CustomImageLabelerOptions(localModel: localModel)
         options.confidenceThreshold = NSNumber(value: confidenceThreshold)
         let imageLabeler = ImageLabeler.imageLabeler(options: options)
