@@ -117,7 +117,9 @@ class __BodyState extends State<_Body> {
       stopwatch.start();
 
       reqImageStopwatch.start();
-      final imageBytes = await _ctrl.requestImageForAnalysis();
+      final imageBytes = await _ctrl.requestImageForAnalysis(
+        analysisOptionsId: 'analysis',
+      );
       reqImageStopwatch.stop();
       totalRequests++;
       _requestImageDurationMs =
@@ -214,12 +216,14 @@ class __BodyState extends State<_Body> {
       children: [
         Positioned.fill(
           child: Camera2Preview(
-            analysisOptions: const Camera2AnalysisOptions(
-              colorOrder: ColorOrder.rgb,
-              normalization: Normalization.ubyte,
-              centerCropWidthPercent: _centerCropWidthPercent,
-              centerCropAspectRatio: _centerCropAspectRatio,
-            ),
+            analysisOptions: {
+              'analysis': const Camera2AnalysisOptions(
+                colorOrder: ColorOrder.rgb,
+                normalization: Normalization.ubyte,
+                centerCropWidthPercent: _centerCropWidthPercent,
+                centerCropAspectRatio: _centerCropAspectRatio,
+              ),
+            },
             onPlatformViewCreated: (ctrl) => _ctrl = ctrl,
           ),
         ),

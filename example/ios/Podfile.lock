@@ -1,7 +1,7 @@
 PODS:
   - automl_image_labeling (0.0.1):
     - Flutter
-    - GoogleMLKit/ImageLabelingCustom (= 1.0.0)
+    - GoogleMLKit/ImageLabelingCustom
   - camera2 (0.0.1):
     - Flutter
   - Flutter (1.0.0)
@@ -109,7 +109,7 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/permission_handler/ios"
 
 SPEC CHECKSUMS:
-  automl_image_labeling: 17abe3a3df45acae96451fb3aa4528801c9a4faf
+  automl_image_labeling: eecf102425c5371d8b20ccfcb4f1a27b7e5aa48e
   camera2: 5a45ac7cd03a862941c6e48df901ce077901a830
   Flutter: 0e3d915762c693b495b44d77113d4970485de6ec
   GoogleDataTransport: 1024b1a4dfbd7a0e92cb20d7e0a6f1fb66b449a4
