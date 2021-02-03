@@ -108,7 +108,7 @@ public class SwiftAutomlImageLabelingPlugin: NSObject, FlutterPlugin {
         lastLabelerId += 1
         
         let queue = DispatchQueue(label: "AutoML Labeler #\(id)", qos: .userInteractive)
-        let localModel = LocalModel(manifestPath: manifestFileAssetPath)!
+        let localModel = LocalModel(manifestPath: manifestFileAssetPath)
         let options = CustomImageLabelerOptions(localModel: localModel)
         options.confidenceThreshold = NSNumber(value: confidenceThreshold)
         let imageLabeler = ImageLabeler.imageLabeler(options: options)

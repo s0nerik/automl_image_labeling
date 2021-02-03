@@ -17,7 +17,7 @@ A new flutter plugin project.
   s.dependency 'Flutter'
   s.platform = :ios, '11.0'
 
-  s.dependency 'GoogleMLKit/ImageLabelingCustom'
+  s.dependency 'GoogleMLKit/ImageLabelingCustom', '~> 1.1.0'
   s.static_framework = true
 
   # Flutter.framework does not contain a i386 slice.
