@@ -4,7 +4,6 @@ import android.graphics.Bitmap
 import android.graphics.Color
 import android.os.Handler
 import android.os.Looper
-import android.util.Log
 import android.util.Size
 import androidx.annotation.NonNull
 import androidx.lifecycle.Lifecycle
@@ -12,8 +11,8 @@ import androidx.lifecycle.LifecycleOwner
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.label.ImageLabeler
 import com.google.mlkit.vision.label.ImageLabeling
-import com.google.mlkit.vision.label.automl.AutoMLImageLabelerLocalModel
-import com.google.mlkit.vision.label.automl.AutoMLImageLabelerOptions
+import com.google.mlkit.common.model.LocalModel
+import com.google.mlkit.vision.label.custom.CustomImageLabelerOptions
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
@@ -50,18 +49,18 @@ class AutomlImageLabelingPlugin : FlutterPlugin, MethodCallHandler, ActivityAwar
     override fun onMethodCall(@NonNull call: MethodCall, @NonNull result: Result) {
         when (call.method) {
             "prepareLabeler" -> {
-                val manifestFileAssetPathParam = call.argument<String>("manifestFileAssetPath")!!
-                val manifestFileAssetPackageParam = call.argument<String?>("manifestFileAssetPackage")
-                val manifestFileAssetPath = if (manifestFileAssetPackageParam != null)
-                    binding.flutterAssets.getAssetFilePathBySubpath(manifestFileAssetPathParam, manifestFileAssetPackageParam)
+                val modelFileAssetPathParam = call.argument<String>("modelFileAssetPath")!!
+                val modelFileAssetPackageParam = call.argument<String?>("modelFileAssetPackage")
+                val modelFileAssetPath = if (modelFileAssetPackageParam != null)
+                    binding.flutterAssets.getAssetFilePathBySubpath(modelFileAssetPathParam, modelFileAssetPackageParam)
                 else
-                    binding.flutterAssets.getAssetFilePathBySubpath(manifestFileAssetPathParam)
+                    binding.flutterAssets.getAssetFilePathBySubpath(modelFileAssetPathParam)
 
                 val confidenceThreshold = call.argument<Double>("confidenceThreshold")!!
                 val bitmapWidth = call.argument<Int>("bitmapWidth")!!
                 val bitmapHeight = call.argument<Int>("bitmapHeight")!!
                 val id = initLabeler(
-                        manifestFileAssetPath = manifestFileAssetPath,
+                        assetFilePath = modelFileAssetPath,
                         confidenceThreshold = confidenceThreshold.toFloat(),
                         bitmapSize = Size(bitmapWidth, bitmapHeight)
                 )
@@ -101,7 +100,7 @@ class AutomlImageLabelingPlugin : FlutterPlugin, MethodCallHandler, ActivityAwar
     }
 
     private fun initLabeler(
-            manifestFileAssetPath: String,
+            assetFilePath: String,
             confidenceThreshold: Float,
             bitmapSize: Size
     ): Int {
@@ -110,10 +109,10 @@ class AutomlImageLabelingPlugin : FlutterPlugin, MethodCallHandler, ActivityAwar
         val executor = Executors.newSingleThreadExecutor()
         executors[id] = executor
 
-        val localModel = AutoMLImageLabelerLocalModel.Builder()
-                .setAssetFilePath(manifestFileAssetPath)
+        val localModel = LocalModel.Builder()
+                .setAssetFilePath(assetFilePath)
                 .build()
-        val localModelOptions = AutoMLImageLabelerOptions.Builder(localModel)
+        val localModelOptions = CustomImageLabelerOptions.Builder(localModel)
                 .setConfidenceThreshold(confidenceThreshold)
                 .build()
         val imageLabeler = ImageLabeling.getClient(localModelOptions)
